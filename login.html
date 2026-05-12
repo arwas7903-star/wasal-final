@@ -24,12 +24,12 @@
   <script>
     let isRegister = false;
 
-    function validateEmail(e) {
-      return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e);
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    function validatePassword(p) {
-      return p.length >= 6;
+    function validatePassword(password) {
+      return password.length >= 6;
     }
 
     function showToast(msg, isError) {
@@ -41,6 +41,14 @@
       setTimeout(() => t.remove(), 3500);
     }
 
+    function getAccounts() {
+      return JSON.parse(localStorage.getItem("wasal_accounts") || "[]");
+    }
+
+    function saveAccounts(accounts) {
+      localStorage.setItem("wasal_accounts", JSON.stringify(accounts));
+    }
+
     function renderForm() {
       const r = isRegister;
 
@@ -50,46 +58,44 @@
 
           <div class="card auth-card">
             <h1 class="text-2xl font-bold text-center" style="color:var(--primary)">
-              ${r ? T("auth.register_title") : T("auth.login_title")}
+              ${r ? "إنشاء حساب جديد" : "تسجيل الدخول"}
             </h1>
 
             <p class="text-center text-muted mt-2">
-              ${r ? T("auth.register_subtitle") : "سجلي دخولك باستخدام الحساب الذي أنشأتيه سابقًا"}
+              ${r ? "أنشئ حسابك أولاً للوصول إلى خدمات وصال" : "سجل دخولك بالحساب الذي أنشأته سابقًا"}
             </p>
 
             <form id="auth-form" class="space-y-4 mt-6" onsubmit="handleSubmit(event)">
               ${r ? `
                 <div class="form-group">
-                  <label for="inp-name">${T("auth.name")}</label>
-                  <input id="inp-name" class="input" type="text" placeholder="${T("auth.name_hint")}" required>
+                  <label for="inp-name">الاسم الكامل</label>
+                  <input id="inp-name" class="input" type="text" placeholder="أدخل اسمك الكامل" required>
                 </div>
 
                 <div class="form-group">
-                  <label for="inp-phone">${T("auth.phone")}</label>
-                  <input id="inp-phone" class="input" type="tel" placeholder="${T("auth.phone_hint")}" required>
+                  <label for="inp-phone">رقم الجوال</label>
+                  <input id="inp-phone" class="input" type="tel" placeholder="05xxxxxxxx" required>
                 </div>
               ` : ""}
 
               <div class="form-group">
-                <label for="inp-email">${T("auth.email")}</label>
-                <input id="inp-email" class="input" type="email" placeholder="${T("auth.email_hint")}" required>
-                <span class="field-hint" id="email-hint">${T("auth.email_hint")}</span>
+                <label for="inp-email">البريد الإلكتروني</label>
+                <input id="inp-email" class="input" type="email" placeholder="example@gmail.com" required>
               </div>
 
               <div class="form-group">
-                <label for="inp-password">${T("auth.password")}</label>
-                <input id="inp-password" class="input" type="password" placeholder="${T("auth.password_hint")}" required>
-                <span class="field-hint" id="pw-hint">${T("auth.password_hint")}</span>
+                <label for="inp-password">كلمة المرور</label>
+                <input id="inp-password" class="input" type="password" placeholder="6 أحرف على الأقل" required>
               </div>
 
               <button type="submit" id="submit-btn" class="btn btn-primary btn-full mt-2">
-                ${r ? T("auth.register_btn") : T("auth.login_btn")}
+                ${r ? "إنشاء حساب" : "تسجيل الدخول"}
               </button>
 
               <p class="text-center text-sm text-muted mt-2">
-                ${r ? T("auth.have_account") : T("auth.no_account")}
+                ${r ? "لديك حساب بالفعل؟" : "ليس لديك حساب؟"}
                 <a href="#" onclick="toggleMode(); return false;" style="color:var(--primary);font-weight:600;">
-                  ${r ? T("auth.login_instead") : T("auth.create_one")}
+                  ${r ? "سجل دخولك" : "أنشئ حساباً"}
                 </a>
               </p>
             </form>
@@ -102,46 +108,32 @@
       renderForm();
     }
 
-    function getSavedAccounts() {
-      return JSON.parse(localStorage.getItem("wasal_accounts") || "[]");
-    }
-
-    function saveAccounts(accounts) {
-      localStorage.setItem("wasal_accounts", JSON.stringify(accounts));
-    }
-
-    async function handleSubmit(e) {
+    function handleSubmit(e) {
       e.preventDefault();
 
       const email = document.getElementById("inp-email").value.trim().toLowerCase();
       const password = document.getElementById("inp-password").value;
 
       if (!validateEmail(email)) {
-        showToast(T("auth.email_invalid"), true);
+        showToast("يرجى إدخال بريد إلكتروني صحيح", true);
         return;
       }
 
       if (!validatePassword(password)) {
-        showToast(T("auth.password_invalid"), true);
+        showToast("كلمة المرور يجب أن تكون 6 أحرف على الأقل", true);
         return;
       }
 
-      const btn = document.getElementById("submit-btn");
-      btn.disabled = true;
-      btn.textContent = T("common.loading");
-
-      const accounts = getSavedAccounts();
+      const accounts = getAccounts();
 
       if (isRegister) {
         const name = document.getElementById("inp-name").value.trim();
         const phone = document.getElementById("inp-phone").value.trim();
 
-        const exists = accounts.find(user => user.email === email);
+        const exists = accounts.find(acc => acc.email === email);
 
         if (exists) {
-          showToast("هذا البريد مسجل مسبقًا، سجلي دخولك بدل إنشاء حساب جديد", true);
-          btn.disabled = false;
-          btn.textContent = T("auth.register_btn");
+          showToast("هذا البريد مسجل مسبقًا، سجلي دخولك", true);
           return;
         }
 
@@ -162,14 +154,10 @@
         return;
       }
 
-      const user = accounts.find(
-        account => account.email === email && account.password === password
-      );
+      const user = accounts.find(acc => acc.email === email && acc.password === password);
 
       if (!user) {
         showToast("الإيميل أو كلمة المرور غير صحيحة، أو لا يوجد حساب بهذا البريد", true);
-        btn.disabled = false;
-        btn.textContent = T("auth.login_btn");
         return;
       }
 
