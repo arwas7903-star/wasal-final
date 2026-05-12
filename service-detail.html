@@ -1,324 +1,133 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>وصال — تفاصيل الحجز</title>
-
   <link rel="stylesheet" href="./css/style.css">
-
-  <style>
-    .booking-container{
-      max-width:700px;
-      margin:40px auto;
-      padding:20px;
-    }
-
-    .booking-card{
-      background:white;
-      border-radius:20px;
-      padding:25px;
-      box-shadow:0 8px 25px rgba(0,0,0,.08);
-    }
-
-    .booking-title{
-      color:#1f8f5f;
-      margin-bottom:10px;
-      font-size:28px;
-      font-weight:bold;
-    }
-
-    .booking-sub{
-      color:#666;
-      margin-bottom:25px;
-      line-height:1.7;
-    }
-
-    .form-group{
-      margin-bottom:18px;
-    }
-
-    .form-group label{
-      display:block;
-      margin-bottom:8px;
-      font-weight:600;
-      color:#333;
-    }
-
-    .input{
-      width:100%;
-      padding:14px;
-      border-radius:12px;
-      border:1px solid #ddd;
-      font-size:15px;
-      outline:none;
-    }
-
-    textarea.input{
-      min-height:120px;
-      resize:none;
-    }
-
-    .submit-btn{
-      width:100%;
-      border:none;
-      padding:15px;
-      border-radius:14px;
-      background:#1f8f5f;
-      color:white;
-      font-size:17px;
-      cursor:pointer;
-      font-weight:bold;
-      margin-top:10px;
-    }
-
-    .submit-btn:hover{
-      background:#166947;
-    }
-  </style>
 </head>
 
-<body>
+<body data-page="services" data-require-auth="true">
+  <div id="layout-header"></div>
 
-<div id="layout-header"></div>
+  <main class="main-content">
+    <div id="page-root"></div>
+  </main>
 
-<main class="main-content">
+  <div id="layout-bottom-nav"></div>
+  <div id="toast-container"></div>
 
-  <div class="booking-container">
+  <script src="./js/config.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/layout.js"></script>
 
-    <div class="booking-card">
+  <script>
+    let selectedPay = null;
+    let selectedService = null;
+    let selectedOption = null;
 
-      <h1 class="booking-title" id="serviceTitle">
-        تفاصيل الحجز
-      </h1>
+    function showToast(msg, isError) {
+      const c = document.getElementById("toast-container");
+      const t = document.createElement("div");
+      t.className = "toast" + (isError ? " error" : "");
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
 
-      <p class="booking-sub">
-        الرجاء تعبئة البيانات المطلوبة لإكمال الحجز
-      </p>
+    function selectPay(method) {
+      selectedPay = method;
 
-      <form id="bookingForm">
+      document.querySelectorAll(".pay-method").forEach(el => {
+        el.classList.remove("selected");
+      });
 
-        <!-- الوقت -->
+      const btn = document.getElementById("pay-" + method);
+      if (btn) btn.classList.add("selected");
 
+      const cardFields = document.getElementById("card-fields");
+      if (cardFields) {
+        cardFields.style.display = method === "card" ? "block" : "none";
+      }
+    }
+
+    function formatCard(value) {
+      return value
+        .replace(/\D/g, "")
+        .slice(0, 16)
+        .replace(/(.{4})/g, "$1 ")
+        .trim();
+    }
+
+    function formatExpiry(value) {
+      const v = value.replace(/\D/g, "").slice(0, 4);
+      if (v.length >= 3) return v.slice(0, 2) + "/" + v.slice(2);
+      return v;
+    }
+
+    function renderFields(option) {
+      const fields = (option.fields || []).filter(f => f !== "الوقت");
+
+      return fields.map((field, index) => {
+        const isTextArea = field.includes("وصف") || field.includes("تفاصيل");
+
+        if (isTextArea) {
+          return `
+            <div class="form-group">
+              <label>${field} <span class="required">*</span></label>
+              <textarea
+                class="input booking-field"
+                data-label="${field}"
+                placeholder="اكتب ${field}"
+                required
+              ></textarea>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="form-group">
+            <label>${field} <span class="required">*</span></label>
+            <input
+              class="input booking-field"
+              data-label="${field}"
+              type="text"
+              placeholder="أدخل ${field}"
+              required
+            >
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderImage(option) {
+      if (!option.imageOptional) return "";
+
+      return `
         <div class="form-group">
-          <label>الوقت</label>
-          <input type="time" class="input" required>
+          <label>رفع صورة للمشكلة <span class="optional">(اختياري)</span></label>
+          <input id="problem-image" class="input" type="file" accept="image/*">
         </div>
+      `;
+    }
 
-        <!-- التنقل -->
+    window.addEventListener("layout-ready", async function () {
+      const root = document.getElementById("page-root");
+      const params = new URLSearchParams(location.search);
 
-        <div id="transport-fields">
+      const serviceId = Number(params.get("serviceId"));
+      const optionId = Number(params.get("optionId"));
 
-          <div class="form-group">
-            <label>الموقع الحالي</label>
-            <input type="text" class="input" placeholder="أدخل موقعك الحالي" required>
+      if (!serviceId || !optionId) {
+        root.innerHTML = `
+          <div class="empty-state">
+            <h2>لم يتم تحديد الخدمة بشكل صحيح</h2>
+            <p class="text-muted">ارجعي للخدمات واختاري نوع الخدمة مرة ثانية.</p>
+            <a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a>
           </div>
-
-          <div class="form-group">
-            <label>الوجهة</label>
-            <input type="text" class="input" placeholder="أدخل الوجهة المطلوبة" required>
-          </div>
-
-        </div>
-
-        <!-- دعم الأماكن العامة -->
-
-        <div id="public-support-fields">
-
-          <div class="form-group">
-            <label>الموقع</label>
-            <input type="text" class="input" placeholder="أدخل الموقع" required>
-          </div>
-
-          <div class="form-group">
-            <label>نوع المساعدة</label>
-            <input type="text" class="input" placeholder="أدخل نوع المساعدة" required>
-          </div>
-
-        </div>
-
-        <!-- دعم المنزل -->
-
-        <div id="home-support-fields">
-
-          <div class="form-group">
-            <label>عنوان المنزل</label>
-            <input type="text" class="input" placeholder="أدخل عنوان المنزل" required>
-          </div>
-
-          <div class="form-group">
-            <label>نوع الدعم</label>
-            <input type="text" class="input" placeholder="أدخل نوع الدعم" required>
-          </div>
-
-        </div>
-
-        <!-- دعم المدرسة -->
-
-        <div id="school-support-fields">
-
-          <div class="form-group">
-            <label>اسم المدرسة</label>
-            <input type="text" class="input" placeholder="أدخل اسم المدرسة" required>
-          </div>
-
-          <div class="form-group">
-            <label>تفاصيل المرافقة</label>
-            <input type="text" class="input" placeholder="أدخل تفاصيل المرافقة" required>
-          </div>
-
-        </div>
-
-        <!-- دعم المستشفى -->
-
-        <div id="hospital-support-fields">
-
-          <div class="form-group">
-            <label>اسم المستشفى</label>
-            <input type="text" class="input" placeholder="أدخل اسم المستشفى" required>
-          </div>
-
-          <div class="form-group">
-            <label>نوع الحالة</label>
-            <input type="text" class="input" placeholder="أدخل نوع الحالة" required>
-          </div>
-
-        </div>
-
-        <!-- الدعم الشخصي -->
-
-        <div id="support-fields">
-
-          <div class="form-group">
-            <label>نوع الطلب</label>
-            <input type="text" class="input" placeholder="أدخل نوع الطلب" required>
-          </div>
-
-          <div class="form-group">
-            <label>موقع التواجد</label>
-            <input type="text" class="input" placeholder="أدخل موقع التواجد" required>
-          </div>
-
-        </div>
-
-        <!-- الطلب السريع -->
-
-        <div id="quick-fields">
-
-          <div class="form-group">
-            <label>موقع الاستلام</label>
-            <input type="text" class="input" placeholder="أدخل موقع الاستلام" required>
-          </div>
-
-          <div class="form-group">
-            <label>موقع التسليم</label>
-            <input type="text" class="input" placeholder="أدخل موقع التسليم" required>
-          </div>
-
-        </div>
-
-        <!-- المطعم -->
-
-        <div id="restaurant-fields">
-
-          <div class="form-group">
-            <label>اسم المطعم</label>
-            <input type="text" class="input" placeholder="أدخل اسم المطعم" required>
-          </div>
-
-          <div class="form-group">
-            <label>موقع التوصيل</label>
-            <input type="text" class="input" placeholder="أدخل موقع التوصيل" required>
-          </div>
-
-        </div>
-
-        <!-- المقهى -->
-
-        <div id="cafe-fields">
-
-          <div class="form-group">
-            <label>اسم المقهى</label>
-            <input type="text" class="input" placeholder="أدخل اسم المقهى" required>
-          </div>
-
-          <div class="form-group">
-            <label>عنوان التوصيل</label>
-            <input type="text" class="input" placeholder="أدخل عنوان التوصيل" required>
-          </div>
-
-        </div>
-
-        <!-- الصيانة المنزلية -->
-
-        <div id="home-maintenance-fields">
-
-          <div class="form-group">
-            <label>نوع الخدمة</label>
-            <input type="text" class="input" placeholder="أدخل نوع الخدمة" required>
-          </div>
-
-          <div class="form-group">
-            <label>موقع المنزل</label>
-            <input type="text" class="input" placeholder="أدخل موقع المنزل" required>
-          </div>
-
-        </div>
-
-        <!-- صيانة الأجهزة -->
-
-        <div id="device-maintenance-fields">
-
-          <div class="form-group">
-            <label>نوع الجهاز</label>
-            <input type="text" class="input" placeholder="أدخل نوع الجهاز" required>
-          </div>
-
-          <div class="form-group">
-            <label>وصف المشكلة</label>
-            <textarea class="input" placeholder="اكتب وصف المشكلة" required></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>رفع صورة للمشكلة (اختياري)</label>
-            <input type="file" class="input">
-          </div>
-
-        </div>
-
-        <button type="submit" class="submit-btn">
-          تأكيد الحجز
-        </button>
-
-      </form>
-
-    </div>
-
-  </div>
-
-</main>
-
-<div id="layout-bottom-nav"></div>
-
-<script src="./js/config.js"></script>
-<script src="./js/translations.js"></script>
-<script src="./js/api.js"></script>
-<script src="./js/layout.js"></script>
-
-<script>
-
-document.getElementById("bookingForm")
-.addEventListener("submit", function(e){
-
-  e.preventDefault();
-
-  alert("تم إرسال الطلب بنجاح");
-
-  window.location.href = "./orders.html";
-
-});
-
-</script>
-
-</body>
-</html>
+        `;
+        return;
+      }
+
+      const services =
