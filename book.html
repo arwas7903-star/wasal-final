@@ -24,8 +24,8 @@
 
   <script>
     let selectedPay = null;
-    let currentOption = null;
-    let currentService = null;
+    let selectedService = null;
+    let selectedOption = null;
 
     function showToast(msg, isError) {
       const c = document.getElementById("toast-container");
@@ -43,8 +43,8 @@
         el.classList.remove("selected");
       });
 
-      const selected = document.getElementById("pay-" + method);
-      if (selected) selected.classList.add("selected");
+      const btn = document.getElementById("pay-" + method);
+      if (btn) btn.classList.add("selected");
 
       const cardFields = document.getElementById("card-fields");
       if (cardFields) {
@@ -52,43 +52,25 @@
       }
     }
 
-    function formatCard(v) {
-      return v
-        .replace(/\D/g, "")
-        .slice(0, 16)
-        .replace(/(.{4})/g, "$1 ")
-        .trim();
+    function formatCard(value) {
+      return value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
     }
 
-    function formatExpiry(v) {
-      const d = v.replace(/\D/g, "").slice(0, 4);
-      return d.length >= 3 ? d.slice(0, 2) + "/" + d.slice(2) : d;
+    function formatExpiry(value) {
+      const v = value.replace(/\D/g, "").slice(0, 4);
+      return v.length >= 3 ? v.slice(0, 2) + "/" + v.slice(2) : v;
     }
 
-    function getFieldsForOption(option) {
-      if (option.fields && option.fields.length) {
-        return option.fields.filter(field => field !== "الوقت");
-      }
+    function renderFields(option) {
+      return (option.fields || []).map((field, index) => {
+        const isTime = field === "الوقت";
+        const isTextarea = field.includes("تفاصيل") || field.includes("شرح");
 
-      return ["تفاصيل الطلب"];
-    }
-
-    function renderDynamicFields(option) {
-      const fields = getFieldsForOption(option);
-
-      return fields.map((field, index) => {
-        const isProblem = field.includes("وصف المشكلة") || field.includes("تفاصيل");
-
-        if (isProblem) {
+        if (isTextarea) {
           return `
             <div class="form-group">
               <label>${field} <span class="required">*</span></label>
-              <textarea 
-                id="field-${index}" 
-                class="input dynamic-field" 
-                data-label="${field}" 
-                placeholder="اكتب ${field}" 
-                required></textarea>
+              <textarea class="input booking-field" data-label="${field}" placeholder="اكتب ${field}" required></textarea>
             </div>
           `;
         }
@@ -96,51 +78,44 @@
         return `
           <div class="form-group">
             <label>${field} <span class="required">*</span></label>
-            <input 
-              id="field-${index}" 
-              class="input dynamic-field" 
-              data-label="${field}" 
-              type="text" 
-              placeholder="أدخل ${field}" 
-              required>
+            <input class="input booking-field" data-label="${field}" type="${isTime ? "time" : "text"}" placeholder="أدخل ${field}" required>
           </div>
         `;
       }).join("");
     }
 
-    window.addEventListener("layout-ready", async function () {
+    function renderImage(option) {
+      if (!option.imageOptional) return "";
+
+      return `
+        <div class="form-group">
+          <label>رفع صورة للمشكلة <span class="optional">(اختياري)</span></label>
+          <input id="problem-image" class="input" type="file" accept="image/*">
+        </div>
+      `;
+    }
+
+    async function loadBook() {
       const root = document.getElementById("page-root");
       const params = new URLSearchParams(location.search);
 
       const serviceId = Number(params.get("serviceId"));
       const optionId = Number(params.get("optionId"));
 
-      if (!serviceId || !optionId) {
-        root.innerHTML = `
-          <div class="empty-state">
-            <h2>لم يتم العثور على الخدمة</h2>
-            <a href="./services.html">
-              <button class="btn btn-primary mt-4">العودة للخدمات</button>
-            </a>
-          </div>
-        `;
+      const services = await API.getServices();
+      selectedService = services.find(s => Number(s.id) === serviceId);
+
+      if (!selectedService) {
+        root.innerHTML = `<div class="empty-state"><h2>لم يتم العثور على الخدمة</h2><a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a></div>`;
         return;
       }
 
-      const service = await API.getService(serviceId);
-      if (!service) {
-        location.href = "./services.html";
+      selectedOption = selectedService.options.find(o => Number(o.id) === optionId);
+
+      if (!selectedOption) {
+        root.innerHTML = `<div class="empty-state"><h2>لم يتم العثور على نوع الخدمة</h2><a href="./service-detail.html?id=${serviceId}" class="btn btn-primary mt-4">العودة</a></div>`;
         return;
       }
-
-      const option = service.options.find(o => Number(o.id) === optionId);
-      if (!option) {
-        location.href = "./service-detail.html?id=" + serviceId;
-        return;
-      }
-
-      currentService = service;
-      currentOption = option;
 
       root.innerHTML = `
         <div class="fade-in" style="max-width:650px;margin:0 auto">
@@ -150,13 +125,13 @@
 
           <div class="card mb-4" style="background:var(--primary-bg);border-color:hsl(153 55% 78%)">
             <p class="text-xs text-muted mb-1">الخدمة المختارة</p>
-            <h3>${service.icon} ${service.nameAr} — ${option.nameAr}</h3>
-            <p class="text-muted mt-2">${option.descriptionAr}</p>
+            <h3>${selectedService.icon} ${selectedService.nameAr} — ${selectedOption.nameAr}</h3>
+            <p class="text-muted mt-2">${selectedOption.descriptionAr}</p>
 
             <div class="flex justify-between items-center mt-3">
               <span class="text-muted text-sm">السعر</span>
               <span style="font-size:1.6rem;font-weight:800;color:var(--primary)">
-                ${option.priceBase} 
+                ${selectedOption.priceBase}
                 <span class="text-muted" style="font-size:.9rem;font-weight:400">ر.س</span>
               </span>
             </div>
@@ -164,28 +139,8 @@
 
           <form id="book-form" onsubmit="handleBook(event)">
             <div class="card mb-4">
-              ${renderDynamicFields(option)}
-
-              <div class="form-group">
-                <label>التاريخ <span class="required">*</span></label>
-                <input id="sched-date" class="input" type="date" required>
-              </div>
-
-              <div class="form-group">
-                <label>الوقت <span class="required">*</span></label>
-                <input id="sched-time" class="input" type="time" required>
-              </div>
-
-              ${
-                option.imageOptional
-                ? `
-                  <div class="form-group">
-                    <label>رفع صورة للمشكلة <span class="optional">(اختياري)</span></label>
-                    <input id="problem-image" class="input" type="file" accept="image/*">
-                  </div>
-                `
-                : ""
-              }
+              ${renderFields(selectedOption)}
+              ${renderImage(selectedOption)}
 
               <div class="form-group">
                 <label>ملاحظات إضافية <span class="optional">(اختياري)</span></label>
@@ -197,69 +152,42 @@
               <h3 class="mb-3">طريقة الدفع</h3>
 
               <div class="pay-methods">
-                <button type="button" id="pay-card" class="pay-method" onclick="selectPay('card')">
-                  💳 بطاقة بنكية
-                </button>
-
-                <button type="button" id="pay-applepay" class="pay-method pay-method-apple" onclick="selectPay('applepay')">
-                   Pay
-                </button>
+                <button type="button" id="pay-card" class="pay-method" onclick="selectPay('card')">💳 بطاقة بنكية</button>
+                <button type="button" id="pay-applepay" class="pay-method pay-method-apple" onclick="selectPay('applepay')"> Pay</button>
               </div>
 
               <div id="card-fields" class="card-fields space-y-4" style="display:none">
                 <div class="form-group">
                   <label>رقم البطاقة <span class="required">*</span></label>
-                  <input 
-                    id="card-num" 
-                    class="input" 
-                    inputmode="numeric" 
-                    placeholder="0000 0000 0000 0000" 
-                    maxlength="19"
-                    oninput="this.value=formatCard(this.value)">
+                  <input id="card-num" class="input" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value=formatCard(this.value)">
                 </div>
 
                 <div class="form-grid-2">
                   <div class="form-group">
                     <label>تاريخ الانتهاء <span class="required">*</span></label>
-                    <input 
-                      id="card-exp" 
-                      class="input" 
-                      inputmode="numeric" 
-                      placeholder="MM/YY" 
-                      maxlength="5"
-                      oninput="this.value=formatExpiry(this.value)">
+                    <input id="card-exp" class="input" inputmode="numeric" placeholder="MM/YY" maxlength="5" oninput="this.value=formatExpiry(this.value)">
                   </div>
 
                   <div class="form-group">
                     <label>CVV <span class="required">*</span></label>
-                    <input 
-                      id="card-cvv" 
-                      class="input" 
-                      inputmode="numeric" 
-                      placeholder="000" 
-                      maxlength="3"
-                      oninput="this.value=this.value.replace(/\\D/g,'')">
+                    <input id="card-cvv" class="input" inputmode="numeric" placeholder="000" maxlength="3" oninput="this.value=this.value.replace(/\\D/g,'')">
                   </div>
                 </div>
 
                 <div class="form-group">
                   <label>الاسم على البطاقة <span class="required">*</span></label>
-                  <input 
-                    id="card-name" 
-                    class="input" 
-                    type="text" 
-                    placeholder="كما يظهر على البطاقة">
+                  <input id="card-name" class="input" type="text" placeholder="كما يظهر على البطاقة">
                 </div>
               </div>
             </div>
 
             <button type="submit" id="pay-btn" class="btn btn-primary btn-full btn-lg">
-              تأكيد ودفع — ${option.priceBase} ر.س
+              تأكيد ودفع — ${selectedOption.priceBase} ر.س
             </button>
           </form>
         </div>
       `;
-    });
+    }
 
     async function handleBook(e) {
       e.preventDefault();
@@ -269,68 +197,40 @@
         return;
       }
 
-      if (selectedPay === "card") {
-        const num = (document.getElementById("card-num").value || "").replace(/\s/g, "");
-        const exp = document.getElementById("card-exp").value || "";
-        const cvv = document.getElementById("card-cvv").value || "";
-        const name = document.getElementById("card-name").value || "";
+      const fields = Array.from(document.querySelectorAll(".booking-field"));
+      const fieldDetails = fields.map(input => `${input.dataset.label}: ${input.value.trim()}`);
+      const firstValue = fields[0]?.value.trim() || "";
+      const secondValue = fields[1]?.value.trim() || "";
+      const timeField = fields.find(input => input.dataset.label === "الوقت");
+      const timeValue = timeField ? timeField.value : "";
 
-        if (num.length < 16 || exp.length < 4 || cvv.length < 3 || !name.trim()) {
-          showToast("يرجى إكمال بيانات البطاقة", true);
-          return;
-        }
-      }
-
-      const fields = Array.from(document.querySelectorAll(".dynamic-field"));
-
-      const details = fields.map(field => {
-        return `${field.dataset.label}: ${field.value.trim()}`;
-      });
-
-      const firstValue = fields[0] ? fields[0].value.trim() : "";
-      const secondValue = fields[1] ? fields[1].value.trim() : "";
-
-      const date = document.getElementById("sched-date").value;
-      const time = document.getElementById("sched-time").value;
       const notes = document.getElementById("notes").value.trim();
 
-      let imageText = "";
-      const imageInput = document.getElementById("problem-image");
-      if (imageInput && imageInput.files.length > 0) {
-        imageText = `الصورة المرفقة: ${imageInput.files[0].name}`;
-      }
-
       const fullNotes = [
-        `تفاصيل الخدمة:`,
-        ...details,
-        notes ? `ملاحظات إضافية: ${notes}` : "",
-        imageText
+        ...fieldDetails,
+        notes ? `ملاحظات إضافية: ${notes}` : ""
       ].filter(Boolean).join(" | ");
-
-      const btn = document.getElementById("pay-btn");
-      btn.disabled = true;
-      btn.textContent = "جاري تأكيد الحجز...";
 
       try {
         const order = await API.createOrder({
-          serviceOptionId: currentOption.id,
+          serviceOptionId: selectedOption.id,
           locationFrom: firstValue,
           locationTo: secondValue,
-          scheduledDate: date,
-          scheduledTime: time,
+          scheduledDate: new Date().toISOString().slice(0, 10),
+          scheduledTime: timeValue,
           notes: fullNotes,
           additionalFee: null
         });
 
         await API.confirmOrder(order.id);
-
         location.href = "./order-detail.html?id=" + order.id;
+
       } catch (err) {
-        showToast("حدث خطأ أثناء إنشاء الطلب", true);
-        btn.disabled = false;
-        btn.textContent = `تأكيد ودفع — ${currentOption.priceBase} ر.س`;
+        showToast("حدث خطأ أثناء تأكيد الحجز", true);
       }
     }
+
+    window.addEventListener("DOMContentLoaded", loadBook);
   </script>
 </body>
 </html>
