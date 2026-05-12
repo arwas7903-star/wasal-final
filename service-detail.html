@@ -27,20 +27,8 @@
       const params = new URLSearchParams(location.search);
       const serviceId = Number(params.get("id"));
 
-      if (!serviceId) {
-        location.href = "./services.html";
-        return;
-      }
-
-      let allServices = [];
-
-      if (window.API && typeof API.getServices === "function") {
-        allServices = await API.getServices();
-      } else if (typeof services !== "undefined") {
-        allServices = services;
-      }
-
-      const service = allServices.find(s => Number(s.id) === serviceId);
+      const services = await API.getServices();
+      const service = services.find(s => Number(s.id) === serviceId);
 
       if (!service) {
         root.innerHTML = `
@@ -60,7 +48,6 @@
             <div class="card-icon" style="width:64px;height:64px;font-size:2rem">
               ${service.icon}
             </div>
-
             <div>
               <h1 class="text-primary">${service.nameAr}</h1>
               <p class="text-muted mt-2">${service.descriptionAr}</p>
@@ -78,13 +65,10 @@
                 </div>
 
                 <div class="option-price-col">
-                  <div>
-                    <p class="text-xs text-muted mb-1">السعر الأساسي</p>
-                    <p class="price-big text-primary">
-                      ${option.priceBase}
-                      <span class="text-muted" style="font-size:1rem;font-weight:400">ر.س</span>
-                    </p>
-                  </div>
+                  <p class="price-big text-primary">
+                    ${option.priceBase}
+                    <span class="text-muted" style="font-size:1rem;font-weight:400">ر.س</span>
+                  </p>
 
                   <a href="./book.html?serviceId=${service.id}&optionId=${option.id}" style="width:100%">
                     <button class="btn btn-primary btn-full">احجز الآن</button>
