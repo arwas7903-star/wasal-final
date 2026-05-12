@@ -21,40 +21,35 @@
   <script src="./js/layout.js"></script>
 
   <script>
-    window.addEventListener("layout-ready", async function () {
+    async function loadServices() {
       const root = document.getElementById("page-root");
       const cats = await API.getServices();
-      const lang = localStorage.getItem(Config.KEYS.LANG) || "ar";
 
       root.innerHTML = `
-        <button class="back-btn" onclick="history.back()">← ${T("common.back")}</button>
+        <button class="back-btn" onclick="history.back()">← رجوع</button>
 
         <div class="page-header">
           <h1>الخدمات المتاحة</h1>
-          <p>اختر الخدمة المناسبة لك، ثم ستظهر لك التفاصيل والخيارات الخاصة بها</p>
+          <p>اختاري الخدمة المناسبة لك ثم اطلعي على التفاصيل</p>
         </div>
 
         <div class="grid-2 fade-in" style="max-width:860px;margin:0 auto">
-          ${cats.map(c => {
-            const name = lang === "ar" ? c.nameAr : c.nameEn;
-            const desc = lang === "ar" ? c.descriptionAr : c.descriptionEn;
-
-            return `
-              <a href="./service-detail.html?id=${c.id}" class="card-link">
-                <div class="card hover" style="height:100%">
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="card-icon">${c.icon}</div>
-                    <div>
-                      <h2 class="text-xl font-bold">${name}</h2>
-                    </div>
-                  </div>
-                  <p class="text-muted">${desc}</p>
+          ${cats.map(c => `
+            <a href="./service-detail.html?id=${c.id}" class="card-link">
+              <div class="card hover" style="height:100%">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="card-icon">${c.icon}</div>
+                  <h2 class="text-xl font-bold">${c.nameAr}</h2>
                 </div>
-              </a>`;
-          }).join("")}
+                <p class="text-muted">${c.descriptionAr}</p>
+              </div>
+            </a>
+          `).join("")}
         </div>
       `;
-    });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadServices);
   </script>
 </body>
 </html>
