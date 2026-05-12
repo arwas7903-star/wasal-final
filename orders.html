@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وصال — الطلبات</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body data-page="orders" data-require-auth="true">
+  <div id="layout-header"></div>
+
+  <main class="main-content">
+    <div id="page-root"></div>
+  </main>
+
+  <div id="layout-bottom-nav"></div>
+  <script src="./js/config.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/layout.js"></script>
+  <script>
+    const STATUS_BADGE = {
+      pending:   "badge-pending",
+      confirmed: "badge-confirmed",
+      cancelled: "badge-cancelled",
+      completed: "badge-completed",
+    };
+
+    window.addEventListener("layout-ready", async function () {
+      const root = document.getElementById("page-root");
+      const [orders, summary] = await Promise.all([API.getOrders(), API.getOrdersSummary()]);
+      const lang = localStorage.getItem(Config.KEYS.LANG) || "ar";
+
+      const statsHtml = `
+        <div class="stat-grid mb-6">
+          ${[
+            { label: T("orders.total"),             value: summary.total },
+            { label: T("orders.status_pending"),    value: summary.pending },
+            { label: T("orders.status_confirmed"),  value: summary.confirmed },
+            { label: T("orders.status_completed"),  value: summary.completed },
+          ].map(s => `
+            <div class="stat-card">
+              <div class="stat-value">${s.value}</div>
+              <div class="stat-label">${s.label}</div>
+            </div>`).join("")}
+        </div>`;
+
+      const spentHtml = summary.totalSpent > 0 ? `
+        <div class="card mb-6" style="background:var(--primary-bg);border-color:hsl(153 55% 78%)">
+          <div class="flex justify-between items-center">
+            <span class="text-muted">${T("orders.total_spent")}</span>
+            <span style="font-size:1.6rem;font-weight:800;color:var(--primary)">${Number(summary.totalSpent).toFixed(2)} <span class="text-muted" style="font-size:.9rem;font-weight:400">${T("common.sar")}</span></span>
+          </div>
+        </div>` : "";
+
+      const statusLabel = s => ({
+        pending:   T("orders.status_pending"),
+        confirmed: T("orders.status_confirmed"),
+        cancelled: T("orders.status_cancelled"),
+        completed: T("orders.status_completed"),
+      })[s] || s;
+
+      const listHtml = !orders || orders.length === 0 ? `
+        <div class="empty-state">
+          <div class="empty-icon">🛍️</div>
+          <h3 class="text-muted font-semibold mb-2">${T("orders.empty")}</h3>
+          <p class="text-muted text-sm mb-4">${T("orders.empty_hint")}</p>
+          <a href="./services.html"><button class="btn btn-primary">${T("nav.services")}</button></a>
+        </div>` : orders.map(o => {
+          const oname = o.serviceOption   ? (lang === "ar" ? o.serviceOption.nameAr   : o.serviceOption.nameEn)   : "#" + o.serviceOptionId;
+          const cname = o.serviceCategory ? (lang === "ar" ? o.serviceCategory.nameAr : o.serviceCategory.nameEn) : "";
+          return `
+            <div class="card order-card">
+              <div class="order-header">
+                <div>
+                  <p class="order-num">${T("orders.order_num")}${o.id}</p>
+                  <h3>${cname} — ${oname}</h3>
+                </div>
+                <span class="badge ${STATUS_BADGE[o.status] || ""}">${statusLabel(o.status)}</span>
+              </div>
+              <div class="order-footer">
+                <span style="font-size:1.3rem;font-weight:800">${o.totalPrice} <span class="text-muted text-sm font-semibold">${T("common.sar")}</span></span>
+                <a href="./order-detail.html?id=${o.id}">
+                  <button class="btn btn-outline btn-sm">${T("orders.view_invoice")}</button>
+                </a>
+              </div>
+            </div>`;
+        }).join("");
+
+      root.innerHTML = `
+        <div class="fade-in">
+          <button class="back-btn" onclick="history.back()">← ${T("common.back")}</button>
+          <h1 class="text-primary mb-6">${T("orders.title")}</h1>
+          ${statsHtml}${spentHtml}${listHtml}
+        </div>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وصال — الفاتورة</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body data-page="orders" data-require-auth="true">
+  <div id="layout-header"></div>
+
+  <main class="main-content">
+    <div id="page-root"></div>
+  </main>
+
+  <div id="layout-bottom-nav"></div>
+  <div id="toast-container"></div>
+  <script src="./js/config.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/layout.js"></script>
+  <script>
+    const STATUS_BADGE = {
+      pending:   "badge-pending",
+      confirmed: "badge-confirmed",
+      cancelled: "badge-cancelled",
+      completed: "badge-completed",
+    };
+
+    function showToast(msg, isError) {
+      const c = document.getElementById("toast-container");
+      const t = document.createElement("div");
+      t.className = "toast" + (isError ? " error" : "");
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    function row(label, value) {
+      return `<div class="row"><span class="row-label">${label}</span><span class="row-value">${value}</span></div>`;
+    }
+
+    function statusLabel(s) {
+      return ({
+        pending:   T("orders.status_pending"),
+        confirmed: T("orders.status_confirmed"),
+        cancelled: T("orders.status_cancelled"),
+        completed: T("orders.status_completed"),
+      })[s] || s;
+    }
+
+    async function handleCancel(id) {
+      const btn = document.getElementById("cancel-btn");
+      if (btn) { btn.disabled = true; btn.textContent = T("common.loading"); }
+      try {
+        await API.cancelOrder(id);
+        showToast(T("common.cancel"));
+        setTimeout(() => location.reload(), 600);
+      } catch (err) {
+        showToast(err.message || T("common.error"), true);
+        if (btn) { btn.disabled = false; btn.textContent = T("common.cancel"); }
+      }
+    }
+
+    window.addEventListener("layout-ready", async function () {
+      const root   = document.getElementById("page-root");
+      const params = new URLSearchParams(location.search);
+      const id     = params.get("id");
+      if (!id) { location.href = "./orders.html"; return; }
+
+      const o    = await API.getOrder(id);
+      if (!o) { location.href = "./orders.html"; return; }
+
+      const lang = localStorage.getItem(Config.KEYS.LANG) || "ar";
+      const oname  = o.serviceOption   ? (lang === "ar" ? o.serviceOption.nameAr   : o.serviceOption.nameEn)   : "#" + o.serviceOptionId;
+      const cname  = o.serviceCategory ? (lang === "ar" ? o.serviceCategory.nameAr : o.serviceCategory.nameEn) : "";
+      const dateStr = new Date(o.createdAt).toLocaleDateString(
+        lang === "ar" ? "ar-SA" : "en-US",
+        { year: "numeric", month: "long", day: "numeric" }
+      );
+      const isConfirmed = o.status === "confirmed" || o.status === "completed";
+      const isCancelled = o.status === "cancelled";
+
+      root.innerHTML = `
+        <div class="fade-in" style="max-width:600px;margin:0 auto">
+          <button class="back-btn" onclick="history.back()">← ${T("common.back")}</button>
+          <div class="flex justify-between items-center flex-wrap gap-3 mb-6">
+            <div>
+              <h1 class="text-primary">${T("orders.invoice")}</h1>
+              <p class="text-muted text-sm mt-1">${T("orders.order_num")}${o.id}</p>
+            </div>
+            <span class="badge ${STATUS_BADGE[o.status] || ""}">${statusLabel(o.status)}</span>
+          </div>
+
+          ${isConfirmed ? `
+          <div class="confirmed-banner mb-4">
+            <span class="confirmed-icon">✅</span>
+            <div>
+              <p class="confirmed-title">${T("orders.paid_badge")}</p>
+              <p class="confirmed-date">${dateStr}</p>
+            </div>
+          </div>` : ""}
+
+          <div class="invoice-box mb-6">
+            <div class="invoice-head">
+              <p class="text-xs text-muted mb-1">${T("orders.service_name")}</p>
+              <h3>${cname}</h3>
+              <p class="text-muted">${oname}</p>
+            </div>
+            <div class="invoice-body">
+              ${o.locationFrom  ? row(T("orders.location_from"), o.locationFrom)  : ""}
+              ${o.locationTo    ? row(T("orders.location_to"),   o.locationTo)    : ""}
+              ${o.scheduledDate ? row(T("orders.date"),          o.scheduledDate) : ""}
+              ${o.scheduledTime ? row(T("orders.time"),          o.scheduledTime) : ""}
+              ${o.notes         ? row(T("orders.notes"),         o.notes)         : ""}
+              ${row(T("orders.created_at"), dateStr)}
+            </div>
+            <div class="invoice-foot">
+              ${row(T("orders.base_price"), `${o.basePrice} ${T("common.sar")}`)}
+              ${o.additionalFee && Number(o.additionalFee) > 0
+                ? row(T("orders.additional_fee"), `${o.additionalFee} ${T("common.sar")}`)
+                : ""}
+              <div class="total-row">
+                <span class="font-semibold text-lg">${T("orders.total_price")}</span>
+                <span style="font-size:2rem;font-weight:800;color:var(--primary)">${o.totalPrice} <span class="text-muted" style="font-size:1rem;font-weight:400">${T("common.sar")}</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 no-print" style="flex-wrap:wrap">
+            ${!isCancelled ? `
+            <button id="cancel-btn" class="btn btn-danger flex-1" onclick="handleCancel(${o.id})">
+              ✕ ${T("common.cancel")}
+            </button>` : ""}
+            <button class="btn btn-secondary flex-1" onclick="window.print()">
+              🖨 ${T("common.print")}
+            </button>
+          </div>
+        </div>`;
+    });
+  </script>
+</body>
+</html>
