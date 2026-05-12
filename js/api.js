@@ -39,81 +39,106 @@ window.API = (function () {
     },
   ];
 
- const services = [
+const services = [
   {
     id: 1,
     icon: "🚗",
     nameAr: "التنقل",
     nameEn: "Transportation",
     descriptionAr: "نقل آمن ومريح لذوي الهمم بسيارات مجهزة خصيصاً",
-    descriptionEn: "Safe and comfortable transportation services",
+    descriptionEn: "Safe and comfortable transportation",
     options: [
       {
         id: 101,
         nameAr: "سيارة كبيرة",
         nameEn: "Large Car",
-        descriptionAr: "سيارة واسعة ومناسبة للكراسي المتحركة والعائلات مع مساحة إضافية للراحة",
-        descriptionEn: "Large accessible car",
-        priceBase: 30
+        descriptionAr: "سيارة واسعة مناسبة للكراسي المتحركة والعائلات مع مساحة إضافية.",
+        descriptionEn: "Large accessible car.",
+        priceBase: 30,
+        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
       },
       {
         id: 102,
         nameAr: "سيارة متوسطة",
         nameEn: "Medium Car",
-        descriptionAr: "سيارة مريحة للتنقل اليومي داخل المدينة بمساحة مناسبة وراحة عالية",
-        descriptionEn: "Comfortable medium car",
-        priceBase: 25
+        descriptionAr: "سيارة مريحة للتنقل اليومي داخل المدينة.",
+        descriptionEn: "Comfortable daily transport.",
+        priceBase: 25,
+        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
       },
       {
         id: 103,
         nameAr: "سيارة صغيرة",
         nameEn: "Small Car",
-        descriptionAr: "سيارة سريعة وعملية للتنقلات القصيرة داخل المدينة",
-        descriptionEn: "Fast small car",
-        priceBase: 20
+        descriptionAr: "سيارة عملية وسريعة للتنقلات القصيرة.",
+        descriptionEn: "Fast short-distance transport.",
+        priceBase: 20,
+        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
+      },
+      {
+        id: 104,
+        nameAr: "سيارة مخصصة",
+        nameEn: "Accessible Car",
+        descriptionAr: "سيارة مجهزة لتقديم راحة أكبر أثناء التنقل.",
+        descriptionEn: "Accessible equipped car.",
+        priceBase: 40,
+        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
       }
     ]
   },
 
   {
     id: 2,
-    icon: "🧍",
+    icon: "🤝",
     nameAr: "الدعم الشخصي",
     nameEn: "Personal Support",
     descriptionAr: "مساعدة شخصية متخصصة في المستشفيات والمدارس والمنازل والأماكن العامة",
-    descriptionEn: "Professional personal assistance",
+    descriptionEn: "Specialized personal support",
     options: [
       {
         id: 201,
         nameAr: "دعم في الأماكن العامة",
         nameEn: "Public Places Support",
-        descriptionAr: "مساعد شخصي لمرافقتك في التسوق والأماكن العامة وتسهيل تنقلك",
-        descriptionEn: "Personal assistant in public places",
-        priceBase: 35
+        descriptionAr: "مساعد شخصي لمرافقتك في الأماكن العامة والتسوق.",
+        descriptionEn: "Assistant for public places.",
+        priceBase: 35,
+        fields: ["الموقع", "نوع المساعدة", "الوقت"]
       },
       {
         id: 202,
         nameAr: "دعم في المنزل",
         nameEn: "Home Support",
-        descriptionAr: "مساعد شخصي مدرب لتقديم الدعم والمساعدة داخل المنزل بكل راحة وأمان",
-        descriptionEn: "Home personal support",
-        priceBase: 50
+        descriptionAr: "مساعد شخصي مدرب لتقديم الدعم والمساعدة في المنزل.",
+        descriptionEn: "Home assistant support.",
+        priceBase: 50,
+        fields: ["عنوان المنزل", "نوع الدعم", "الوقت"]
       },
       {
         id: 203,
         nameAr: "دعم في المدرسة",
         nameEn: "School Support",
-        descriptionAr: "مساعد شخصي مدرب لمرافقة الطالب داخل المدرسة وتقديم الدعم التعليمي والتنظيمي",
-        descriptionEn: "School support assistant",
-        priceBase: 55
+        descriptionAr: "مساعد شخصي مدرب لمرافقة الطالب في المدرسة ودعمه تعليمياً.",
+        descriptionEn: "School support assistant.",
+        priceBase: 55,
+        fields: ["اسم المدرسة", "تفاصيل المرافقة", "الوقت"]
       },
       {
         id: 204,
         nameAr: "دعم في المستشفى",
         nameEn: "Hospital Support",
-        descriptionAr: "مساعد شخصي للمرافقة داخل المستشفى وتسهيل الإجراءات والتنقل بين الأقسام",
-        descriptionEn: "Hospital assistance",
-        priceBase: 60
+        descriptionAr: "مساعد شخصي مدرب للمرافقة في المستشفى وتسهيل الإجراءات.",
+        descriptionEn: "Hospital assistant support.",
+        priceBase: 60,
+        fields: ["اسم المستشفى", "نوع الحالة", "الوقت"]
+      },
+      {
+        id: 205,
+        nameAr: "الدعم الشخصي",
+        nameEn: "Personal Support",
+        descriptionAr: "دعم شخصي حسب احتياجك وموقع تواجدك.",
+        descriptionEn: "Personal support by request.",
+        priceBase: 45,
+        fields: ["نوع الطلب", "موقع التواجد", "الوقت"]
       }
     ]
   },
@@ -122,33 +147,36 @@ window.API = (function () {
     id: 3,
     icon: "☕",
     nameAr: "الطلب السريع",
-    nameEn: "Quick Orders",
+    nameEn: "Quick Order",
     descriptionAr: "طلب سريع من المقاهي والمطاعم وخدمات متنوعة توصل إلى بابك",
-    descriptionEn: "Fast delivery services",
+    descriptionEn: "Fast delivery requests",
     options: [
       {
         id: 301,
         nameAr: "خدمات سريعة",
         nameEn: "Quick Services",
-        descriptionAr: "خدمات متنوعة مثل الصيدلية والبقالة والطلبات الخاصة مع توصيل سريع",
-        descriptionEn: "Fast service requests",
-        priceBase: 20
+        descriptionAr: "خدمات سريعة متنوعة مثل الصيدلية والبقالة والطلبات الخاصة.",
+        descriptionEn: "Pharmacy, grocery, and special requests.",
+        priceBase: 20,
+        fields: ["موقع الاستلام", "موقع التسليم", "الوقت"]
       },
       {
         id: 302,
         nameAr: "طلب من مطعم",
         nameEn: "Restaurant Order",
-        descriptionAr: "اطلب وجبتك المفضلة من المطاعم المتاحة مع توصيل سريع وآمن",
-        descriptionEn: "Restaurant delivery",
-        priceBase: 25
+        descriptionAr: "طلب وجبتك المفضلة من المطاعم المتاحة مع توصيل سريع.",
+        descriptionEn: "Restaurant food delivery.",
+        priceBase: 25,
+        fields: ["اسم المطعم", "موقع التوصيل", "الوقت"]
       },
       {
         id: 303,
         nameAr: "طلب من مقهى",
         nameEn: "Cafe Order",
-        descriptionAr: "اطلب مشروباتك ومخبوزاتك من أفضل المقاهي القريبة بكل سهولة",
-        descriptionEn: "Cafe delivery",
-        priceBase: 18
+        descriptionAr: "طلب مشروباتك وطعامك من أفضل المقاهي القريبة.",
+        descriptionEn: "Cafe drinks and food delivery.",
+        priceBase: 18,
+        fields: ["اسم المقهى", "عنوان التوصيل", "الوقت"]
       }
     ]
   },
@@ -165,17 +193,21 @@ window.API = (function () {
         id: 401,
         nameAr: "صيانة منزلية",
         nameEn: "Home Maintenance",
-        descriptionAr: "خدمات صيانة شاملة للسباكة والكهرباء وأعمال النجارة البسيطة داخل المنزل",
-        descriptionEn: "Home maintenance services",
-        priceBase: 70
+        descriptionAr: "صيانة منزلية شاملة للسباكة والكهرباء وأعمال النجارة البسيطة.",
+        descriptionEn: "Plumbing, electricity, and simple carpentry.",
+        priceBase: 70,
+        fields: ["نوع الخدمة", "موقع المنزل", "الوقت"],
+        imageOptional: true
       },
       {
         id: 402,
         nameAr: "صيانة أجهزة",
         nameEn: "Device Maintenance",
-        descriptionAr: "صيانة وإصلاح الأجهزة المنزلية والإلكترونيات والكراسي المتحركة باحترافية عالية",
-        descriptionEn: "Device repair services",
-        priceBase: 80
+        descriptionAr: "صيانة وإصلاح الأجهزة المنزلية والإلكترونيات والكراسي المتحركة.",
+        descriptionEn: "Device and wheelchair maintenance.",
+        priceBase: 80,
+        fields: ["نوع الجهاز", "وصف المشكلة", "الوقت"],
+        imageOptional: true
       }
     ]
   }
