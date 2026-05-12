@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>وصال — تفاصيل الحجز</title>
+  <title>وصال — تفاصيل الخدمة</title>
   <link rel="stylesheet" href="./css/style.css">
 </head>
 
-<body data-page="services" data-require-auth="true">
+<body data-page="services">
   <div id="layout-header"></div>
 
   <main class="main-content">
@@ -15,7 +15,6 @@
   </main>
 
   <div id="layout-bottom-nav"></div>
-  <div id="toast-container"></div>
 
   <script src="./js/config.js"></script>
   <script src="./js/translations.js"></script>
@@ -23,111 +22,74 @@
   <script src="./js/layout.js"></script>
 
   <script>
-    let selectedPay = null;
-    let selectedService = null;
-    let selectedOption = null;
-
-    function showToast(msg, isError) {
-      const c = document.getElementById("toast-container");
-      const t = document.createElement("div");
-      t.className = "toast" + (isError ? " error" : "");
-      t.textContent = msg;
-      c.appendChild(t);
-      setTimeout(() => t.remove(), 3500);
-    }
-
-    function selectPay(method) {
-      selectedPay = method;
-
-      document.querySelectorAll(".pay-method").forEach(el => {
-        el.classList.remove("selected");
-      });
-
-      const btn = document.getElementById("pay-" + method);
-      if (btn) btn.classList.add("selected");
-
-      const cardFields = document.getElementById("card-fields");
-      if (cardFields) {
-        cardFields.style.display = method === "card" ? "block" : "none";
-      }
-    }
-
-    function formatCard(value) {
-      return value
-        .replace(/\D/g, "")
-        .slice(0, 16)
-        .replace(/(.{4})/g, "$1 ")
-        .trim();
-    }
-
-    function formatExpiry(value) {
-      const v = value.replace(/\D/g, "").slice(0, 4);
-      if (v.length >= 3) return v.slice(0, 2) + "/" + v.slice(2);
-      return v;
-    }
-
-    function renderFields(option) {
-      const fields = (option.fields || []).filter(f => f !== "الوقت");
-
-      return fields.map((field, index) => {
-        const isTextArea = field.includes("وصف") || field.includes("تفاصيل");
-
-        if (isTextArea) {
-          return `
-            <div class="form-group">
-              <label>${field} <span class="required">*</span></label>
-              <textarea
-                class="input booking-field"
-                data-label="${field}"
-                placeholder="اكتب ${field}"
-                required
-              ></textarea>
-            </div>
-          `;
-        }
-
-        return `
-          <div class="form-group">
-            <label>${field} <span class="required">*</span></label>
-            <input
-              class="input booking-field"
-              data-label="${field}"
-              type="text"
-              placeholder="أدخل ${field}"
-              required
-            >
-          </div>
-        `;
-      }).join("");
-    }
-
-    function renderImage(option) {
-      if (!option.imageOptional) return "";
-
-      return `
-        <div class="form-group">
-          <label>رفع صورة للمشكلة <span class="optional">(اختياري)</span></label>
-          <input id="problem-image" class="input" type="file" accept="image/*">
-        </div>
-      `;
-    }
-
     window.addEventListener("layout-ready", async function () {
       const root = document.getElementById("page-root");
       const params = new URLSearchParams(location.search);
+      const serviceId = Number(params.get("id"));
 
-      const serviceId = Number(params.get("serviceId"));
-      const optionId = Number(params.get("optionId"));
+      if (!serviceId) {
+        location.href = "./services.html";
+        return;
+      }
 
-      if (!serviceId || !optionId) {
+      const service = await API.getService(serviceId);
+
+      if (!service) {
         root.innerHTML = `
           <div class="empty-state">
-            <h2>لم يتم تحديد الخدمة بشكل صحيح</h2>
-            <p class="text-muted">ارجعي للخدمات واختاري نوع الخدمة مرة ثانية.</p>
-            <a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a>
+            <h2>لم يتم العثور على الخدمة</h2>
+            <a href="./services.html">
+              <button class="btn btn-primary mt-4">العودة للخدمات</button>
+            </a>
           </div>
         `;
         return;
       }
 
-      const services =
+      root.innerHTML = `
+        <div class="fade-in" style="max-width:840px;margin:0 auto">
+          <button class="back-btn" onclick="history.back()">← رجوع</button>
+
+          <div class="flex items-center gap-4 mb-4">
+            <div class="card-icon" style="width:64px;height:64px;font-size:2rem">
+              ${service.icon}
+            </div>
+
+            <div>
+              <h1 class="text-primary">${service.nameAr}</h1>
+              <p class="text-muted mt-2">${service.descriptionAr}</p>
+            </div>
+          </div>
+
+          <h2 class="mb-4">خيارات الخدمة</h2>
+
+          <div class="space-y-4">
+            ${service.options.map(option => `
+              <div class="option-card">
+                <div class="option-body">
+                  <h3>${option.nameAr}</h3>
+                  <p class="text-muted mt-2">${option.descriptionAr}</p>
+                </div>
+
+                <div class="option-price-col">
+                  <div>
+                    <p class="text-xs text-muted mb-1">السعر الأساسي</p>
+                    <p class="price-big text-primary">
+                      ${option.priceBase}
+                      <span class="text-muted" style="font-size:1rem;font-weight:400">ر.س</span>
+                    </p>
+                  </div>
+
+                  <a href="./book.html?serviceId=${service.id}&optionId=${option.id}" style="width:100%">
+                    <button class="btn btn-primary btn-full">احجز الآن</button>
+                  </a>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>
