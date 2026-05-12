@@ -52,37 +52,28 @@ const services = [
         id: 101,
         nameAr: "سيارة كبيرة",
         nameEn: "Large Car",
-        descriptionAr: "سيارة واسعة مناسبة للكراسي المتحركة والعائلات مع مساحة إضافية.",
+        descriptionAr: "سيارة واسعة ومناسبة للكراسي المتحركة والعائلات.",
         descriptionEn: "Large accessible car.",
         priceBase: 30,
-        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
+        fields: ["الموقع الحالي", "موقع الوجهة", "الوقت"]
       },
       {
         id: 102,
         nameAr: "سيارة متوسطة",
         nameEn: "Medium Car",
         descriptionAr: "سيارة مريحة للتنقل اليومي داخل المدينة.",
-        descriptionEn: "Comfortable daily transport.",
+        descriptionEn: "Comfortable medium car.",
         priceBase: 25,
-        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
+        fields: ["الموقع الحالي", "موقع الوجهة", "الوقت"]
       },
       {
         id: 103,
         nameAr: "سيارة صغيرة",
         nameEn: "Small Car",
         descriptionAr: "سيارة عملية وسريعة للتنقلات القصيرة.",
-        descriptionEn: "Fast short-distance transport.",
+        descriptionEn: "Small fast car.",
         priceBase: 20,
-        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
-      },
-      {
-        id: 104,
-        nameAr: "سيارة مخصصة",
-        nameEn: "Accessible Car",
-        descriptionAr: "سيارة مجهزة لتقديم راحة أكبر أثناء التنقل.",
-        descriptionEn: "Accessible equipped car.",
-        priceBase: 40,
-        fields: ["من موقعك الحالي", "إلى الوجهة", "الوقت"]
+        fields: ["الموقع الحالي", "موقع الوجهة", "الوقت"]
       }
     ]
   },
@@ -100,45 +91,36 @@ const services = [
         nameAr: "دعم في الأماكن العامة",
         nameEn: "Public Places Support",
         descriptionAr: "مساعد شخصي لمرافقتك في الأماكن العامة والتسوق.",
-        descriptionEn: "Assistant for public places.",
+        descriptionEn: "Support in public places.",
         priceBase: 35,
-        fields: ["الموقع", "نوع المساعدة", "الوقت"]
+        fields: ["الموقع", "الوقت"]
       },
       {
         id: 202,
         nameAr: "دعم في المنزل",
         nameEn: "Home Support",
         descriptionAr: "مساعد شخصي مدرب لتقديم الدعم والمساعدة في المنزل.",
-        descriptionEn: "Home assistant support.",
+        descriptionEn: "Home support.",
         priceBase: 50,
-        fields: ["عنوان المنزل", "نوع الدعم", "الوقت"]
+        fields: ["الموقع", "الوقت"]
       },
       {
         id: 203,
         nameAr: "دعم في المدرسة",
         nameEn: "School Support",
         descriptionAr: "مساعد شخصي مدرب لمرافقة الطالب في المدرسة ودعمه تعليمياً.",
-        descriptionEn: "School support assistant.",
+        descriptionEn: "School support.",
         priceBase: 55,
-        fields: ["اسم المدرسة", "تفاصيل المرافقة", "الوقت"]
+        fields: ["الموقع", "الوقت"]
       },
       {
         id: 204,
         nameAr: "دعم في المستشفى",
         nameEn: "Hospital Support",
         descriptionAr: "مساعد شخصي مدرب للمرافقة في المستشفى وتسهيل الإجراءات.",
-        descriptionEn: "Hospital assistant support.",
+        descriptionEn: "Hospital support.",
         priceBase: 60,
-        fields: ["اسم المستشفى", "نوع الحالة", "الوقت"]
-      },
-      {
-        id: 205,
-        nameAr: "الدعم الشخصي",
-        nameEn: "Personal Support",
-        descriptionAr: "دعم شخصي حسب احتياجك وموقع تواجدك.",
-        descriptionEn: "Personal support by request.",
-        priceBase: 45,
-        fields: ["نوع الطلب", "موقع التواجد", "الوقت"]
+        fields: ["الموقع", "الوقت"]
       }
     ]
   },
@@ -149,34 +131,34 @@ const services = [
     nameAr: "الطلب السريع",
     nameEn: "Quick Order",
     descriptionAr: "طلب سريع من المقاهي والمطاعم وخدمات متنوعة توصل إلى بابك",
-    descriptionEn: "Fast delivery requests",
+    descriptionEn: "Quick delivery orders",
     options: [
       {
         id: 301,
         nameAr: "خدمات سريعة",
         nameEn: "Quick Services",
-        descriptionAr: "خدمات سريعة متنوعة مثل الصيدلية والبقالة والطلبات الخاصة.",
-        descriptionEn: "Pharmacy, grocery, and special requests.",
+        descriptionAr: "خدمات سريعة متنوعة كالصيدلية والبقالة والطلبات الخاصة.",
+        descriptionEn: "Pharmacy, grocery and special requests.",
         priceBase: 20,
-        fields: ["موقع الاستلام", "موقع التسليم", "الوقت"]
+        fields: ["الموقع الحالي", "الموقع الذي نريد إحضار الطلب منه", "الوقت", "تفاصيل الطلب"]
       },
       {
         id: 302,
         nameAr: "طلب من مطعم",
         nameEn: "Restaurant Order",
         descriptionAr: "طلب وجبتك المفضلة من المطاعم المتاحة مع توصيل سريع.",
-        descriptionEn: "Restaurant food delivery.",
+        descriptionEn: "Restaurant delivery.",
         priceBase: 25,
-        fields: ["اسم المطعم", "موقع التوصيل", "الوقت"]
+        fields: ["الموقع الحالي", "الموقع الذي نريد إحضار الطلب منه", "الوقت", "تفاصيل الطلب"]
       },
       {
         id: 303,
         nameAr: "طلب من مقهى",
         nameEn: "Cafe Order",
-        descriptionAr: "طلب مشروباتك وطعامك من أفضل المقاهي القريبة.",
-        descriptionEn: "Cafe drinks and food delivery.",
+        descriptionAr: "طلب مشروباتك وطعامك من المقاهي.",
+        descriptionEn: "Cafe delivery.",
         priceBase: 18,
-        fields: ["اسم المقهى", "عنوان التوصيل", "الوقت"]
+        fields: ["الموقع الحالي", "الموقع الذي نريد إحضار الطلب منه", "الوقت", "تفاصيل الطلب"]
       }
     ]
   },
@@ -186,17 +168,17 @@ const services = [
     icon: "🛠️",
     nameAr: "الصيانة",
     nameEn: "Maintenance",
-    descriptionAr: "خدمات صيانة الأجهزة والمنزل مع تحديد الوقت والتاريخ المناسبين",
-    descriptionEn: "Home and device maintenance",
+    descriptionAr: "خدمات صيانة للأجهزة والمنزل مع تحديد الوقت والتاريخ المناسبين",
+    descriptionEn: "Maintenance services",
     options: [
       {
         id: 401,
         nameAr: "صيانة منزلية",
         nameEn: "Home Maintenance",
         descriptionAr: "صيانة منزلية شاملة للسباكة والكهرباء وأعمال النجارة البسيطة.",
-        descriptionEn: "Plumbing, electricity, and simple carpentry.",
+        descriptionEn: "Home maintenance.",
         priceBase: 70,
-        fields: ["نوع الخدمة", "موقع المنزل", "الوقت"],
+        fields: ["نوع الخدمة", "شرح المشكلة", "موقع المنزل"],
         imageOptional: true
       },
       {
@@ -204,9 +186,9 @@ const services = [
         nameAr: "صيانة أجهزة",
         nameEn: "Device Maintenance",
         descriptionAr: "صيانة وإصلاح الأجهزة المنزلية والإلكترونيات والكراسي المتحركة.",
-        descriptionEn: "Device and wheelchair maintenance.",
+        descriptionEn: "Device maintenance.",
         priceBase: 80,
-        fields: ["نوع الجهاز", "وصف المشكلة", "الوقت"],
+        fields: ["نوع الخدمة", "شرح المشكلة", "موقع المنزل"],
         imageOptional: true
       }
     ]
