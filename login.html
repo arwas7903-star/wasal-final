@@ -15,15 +15,22 @@
 
   <div id="layout-bottom-nav"></div>
   <div id="toast-container"></div>
+
   <script src="./js/config.js"></script>
   <script src="./js/translations.js"></script>
   <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
+
   <script>
     let isRegister = false;
 
-    function validateEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-    function validatePassword(p) { return p.length >= 6; }
+    function validateEmail(e) {
+      return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e);
+    }
+
+    function validatePassword(p) {
+      return p.length >= 6;
+    }
 
     function showToast(msg, isError) {
       const c = document.getElementById("toast-container");
@@ -36,32 +43,42 @@
 
     function renderForm() {
       const r = isRegister;
+
       document.getElementById("page-root").innerHTML = `
         <div class="auth-wrap fade-in">
           <button class="back-btn" onclick="history.back()">← ${T("common.back")}</button>
+
           <div class="card auth-card">
-            <h1 class="text-2xl font-bold text-center" style="color:var(--primary)">${r ? T("auth.register_title") : T("auth.login_title")}</h1>
-            <p class="text-center text-muted mt-2">${r ? T("auth.register_subtitle") : T("auth.login_subtitle")}</p>
+            <h1 class="text-2xl font-bold text-center" style="color:var(--primary)">
+              ${r ? T("auth.register_title") : T("auth.login_title")}
+            </h1>
+
+            <p class="text-center text-muted mt-2">
+              ${r ? T("auth.register_subtitle") : "سجلي دخولك باستخدام الحساب الذي أنشأتيه سابقًا"}
+            </p>
 
             <form id="auth-form" class="space-y-4 mt-6" onsubmit="handleSubmit(event)">
               ${r ? `
-              <div class="form-group">
-                <label for="inp-name">${T("auth.name")}</label>
-                <input id="inp-name" class="input" type="text" placeholder="${T("auth.name_hint")}" required>
-              </div>
-              <div class="form-group">
-                <label for="inp-phone">${T("auth.phone")}</label>
-                <input id="inp-phone" class="input" type="tel" placeholder="${T("auth.phone_hint")}" required>
-              </div>` : ""}
+                <div class="form-group">
+                  <label for="inp-name">${T("auth.name")}</label>
+                  <input id="inp-name" class="input" type="text" placeholder="${T("auth.name_hint")}" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="inp-phone">${T("auth.phone")}</label>
+                  <input id="inp-phone" class="input" type="tel" placeholder="${T("auth.phone_hint")}" required>
+                </div>
+              ` : ""}
 
               <div class="form-group">
                 <label for="inp-email">${T("auth.email")}</label>
                 <input id="inp-email" class="input" type="email" placeholder="${T("auth.email_hint")}" required>
                 <span class="field-hint" id="email-hint">${T("auth.email_hint")}</span>
               </div>
+
               <div class="form-group">
                 <label for="inp-password">${T("auth.password")}</label>
-                <input id="inp-password" class="input" type="password" required>
+                <input id="inp-password" class="input" type="password" placeholder="${T("auth.password_hint")}" required>
                 <span class="field-hint" id="pw-hint">${T("auth.password_hint")}</span>
               </div>
 
@@ -80,35 +97,92 @@
         </div>`;
     }
 
-    function toggleMode() { isRegister = !isRegister; renderForm(); }
+    function toggleMode() {
+      isRegister = !isRegister;
+      renderForm();
+    }
+
+    function getSavedAccounts() {
+      return JSON.parse(localStorage.getItem("wasal_accounts") || "[]");
+    }
+
+    function saveAccounts(accounts) {
+      localStorage.setItem("wasal_accounts", JSON.stringify(accounts));
+    }
 
     async function handleSubmit(e) {
       e.preventDefault();
-      const email    = document.getElementById("inp-email").value.trim();
+
+      const email = document.getElementById("inp-email").value.trim().toLowerCase();
       const password = document.getElementById("inp-password").value;
-      if (!validateEmail(email) || !validatePassword(password)) return;
+
+      if (!validateEmail(email)) {
+        showToast(T("auth.email_invalid"), true);
+        return;
+      }
+
+      if (!validatePassword(password)) {
+        showToast(T("auth.password_invalid"), true);
+        return;
+      }
 
       const btn = document.getElementById("submit-btn");
       btn.disabled = true;
       btn.textContent = T("common.loading");
 
-      try {
-        let data;
-        if (isRegister) {
-          const name  = document.getElementById("inp-name").value.trim();
-          const phone = document.getElementById("inp-phone").value.trim();
-          data = await API.register({ email, password, name, phone });
-        } else {
-          data = await API.login({ email, password });
+      const accounts = getSavedAccounts();
+
+      if (isRegister) {
+        const name = document.getElementById("inp-name").value.trim();
+        const phone = document.getElementById("inp-phone").value.trim();
+
+        const exists = accounts.find(user => user.email === email);
+
+        if (exists) {
+          showToast("هذا البريد مسجل مسبقًا، سجلي دخولك بدل إنشاء حساب جديد", true);
+          btn.disabled = false;
+          btn.textContent = T("auth.register_btn");
+          return;
         }
-        localStorage.setItem(Config.KEYS.TOKEN, data.token);
-        showToast(isRegister ? T("auth.register_title") : T("auth.login_title"));
-        location.href = "./disabilities.html";
-      } catch (err) {
-        showToast(err.message || T("common.error"), true);
-        btn.disabled = false;
-        btn.textContent = isRegister ? T("auth.register_btn") : T("auth.login_btn");
+
+        const newUser = {
+          id: Date.now(),
+          name,
+          phone,
+          email,
+          password
+        };
+
+        accounts.push(newUser);
+        saveAccounts(accounts);
+
+        showToast("تم إنشاء الحساب بنجاح، سجلي دخولك الآن");
+        isRegister = false;
+        renderForm();
+        return;
       }
+
+      const user = accounts.find(
+        account => account.email === email && account.password === password
+      );
+
+      if (!user) {
+        showToast("الإيميل أو كلمة المرور غير صحيحة، أو لا يوجد حساب بهذا البريد", true);
+        btn.disabled = false;
+        btn.textContent = T("auth.login_btn");
+        return;
+      }
+
+      localStorage.setItem(Config.KEYS.TOKEN, "demo-token");
+      localStorage.setItem("wasal_user", JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }));
+
+      showToast("تم تسجيل الدخول بنجاح");
+      location.href = "./disabilities.html";
     }
 
     window.addEventListener("layout-ready", renderForm);
