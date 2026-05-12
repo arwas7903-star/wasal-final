@@ -22,7 +22,7 @@
   <script src="./js/layout.js"></script>
 
   <script>
-    window.addEventListener("layout-ready", async function () {
+    async function loadServiceDetail() {
       const root = document.getElementById("page-root");
       const params = new URLSearchParams(location.search);
       const serviceId = Number(params.get("id"));
@@ -32,15 +32,21 @@
         return;
       }
 
-      const service = await API.getService(serviceId);
+      let allServices = [];
+
+      if (window.API && typeof API.getServices === "function") {
+        allServices = await API.getServices();
+      } else if (typeof services !== "undefined") {
+        allServices = services;
+      }
+
+      const service = allServices.find(s => Number(s.id) === serviceId);
 
       if (!service) {
         root.innerHTML = `
           <div class="empty-state">
             <h2>لم يتم العثور على الخدمة</h2>
-            <a href="./services.html">
-              <button class="btn btn-primary mt-4">العودة للخدمات</button>
-            </a>
+            <a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a>
           </div>
         `;
         return;
@@ -89,7 +95,9 @@
           </div>
         </div>
       `;
-    });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadServiceDetail);
   </script>
 </body>
 </html>
