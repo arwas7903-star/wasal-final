@@ -42,14 +42,18 @@
       }
     }
     function formatCard(value) {
-      return value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+      return value
+        .replace(/\D/g, "")
+        .slice(0, 16)
+        .replace(/(.{4})/g, "$1 ")
+        .trim();
     }
     function formatExpiry(value) {
       const v = value.replace(/\D/g, "").slice(0, 4);
       return v.length >= 3 ? v.slice(0, 2) + "/" + v.slice(2) : v;
     }
     function renderFields(option) {
-      return (option.fields || []).map((field, index) => {
+      return (option.fields || []).map((field) => {
         const isTime = field === "الوقت";
         const isTextarea = field.includes("تفاصيل") || field.includes("شرح");
         if (isTextarea) {
@@ -84,8 +88,28 @@
           </a>
         </div>
         <p class="text-muted text-sm" style="margin-bottom:15px">
-          يمكنك تحديد البداية والوجهة من الخريطة، وسيتم حفظها داخل المتصفح.
+          يمكنك تحديد البداية والوجهة من الخريطة، وسيتم حفظها داخل الطلب.
         </p>
+      `;
+    }
+    function renderSavedMapInfo() {
+      const startLocation = JSON.parse(localStorage.getItem("startLocation"));
+      const destinationLocation = JSON.parse(localStorage.getItem("destinationLocation"));
+      if (!startLocation && !destinationLocation) return "";
+      return `
+        <div class="card mb-4" style="background:#f8fafc">
+          <h3 class="mb-2">المواقع المحفوظة من الخريطة</h3>
+          ${
+            startLocation
+              ? `<p class="text-muted text-sm">نقطة البداية: ${startLocation.lat.toFixed(5)}, ${startLocation.lng.toFixed(5)}</p>`
+              : ""
+          }
+          ${
+            destinationLocation
+              ? `<p class="text-muted text-sm">الوجهة: ${destinationLocation.lat.toFixed(5)}, ${destinationLocation.lng.toFixed(5)}</p>`
+              : ""
+          }
+        </div>
       `;
     }
     function renderImage(option) {
@@ -105,12 +129,22 @@
       const services = await API.getServices();
       selectedService = services.find(s => Number(s.id) === serviceId);
       if (!selectedService) {
-        root.innerHTML = `<div class="empty-state"><h2>لم يتم العثور على الخدمة</h2><a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a></div>`;
+        root.innerHTML = `
+          <div class="empty-state">
+            <h2>لم يتم العثور على الخدمة</h2>
+            <a href="./services.html" class="btn btn-primary mt-4">العودة للخدمات</a>
+          </div>
+        `;
         return;
       }
       selectedOption = selectedService.options.find(o => Number(o.id) === optionId);
       if (!selectedOption) {
-        root.innerHTML = `<div class="empty-state"><h2>لم يتم العثور على نوع الخدمة</h2><a href="./service-detail.html?id=${serviceId}" class="btn btn-primary mt-4">العودة</a></div>`;
+        root.innerHTML = `
+          <div class="empty-state">
+            <h2>لم يتم العثور على نوع الخدمة</h2>
+            <a href="./service-detail.html?id=${serviceId}" class="btn btn-primary mt-4">العودة</a>
+          </div>
+        `;
         return;
       }
       root.innerHTML = `
@@ -129,6 +163,7 @@
               </span>
             </div>
           </div>
+          ${renderSavedMapInfo()}
           <form id="book-form" onsubmit="handleBook(event)">
             <div class="card mb-4">
               ${renderFields(selectedOption)}
@@ -186,8 +221,25 @@
       const timeField = fields.find(input => input.dataset.label === "الوقت");
       const timeValue = timeField ? timeField.value : "";
       const notes = document.getElementById("notes").value.trim();
+      const startLocation = JSON.parse(localStorage.getItem("startLocation"));
+      const destinationLocation = JSON.parse(localStorage.getItem("destinationLocation"));
+      const mapDetails = [
+        startLocation
+          ? `نقطة البداية من الخريطة: ${startLocation.lat}, ${startLocation.lng}`
+          : "",
+        destinationLocation
+          ? `الوجهة من الخريطة: ${destinationLocation.lat}, ${destinationLocation.lng}`
+          : ""
+      ].filter(Boolean);
+      let imageNote = "";
+      const imageInput = document.getElementById("problem-image");
+      if (imageInput && imageInput.files && imageInput.files.length > 0) {
+        imageNote = `الصورة المرفقة: ${imageInput.files[0].name}`;
+      }
       const fullNotes = [
         ...fieldDetails,
+        ...mapDetails,
+        imageNote,
         notes ? `ملاحظات إضافية: ${notes}` : ""
       ].filter(Boolean).join(" | ");
       try {
