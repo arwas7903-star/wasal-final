@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وصال - تحديد الموقع</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #f3f3f3;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+
+    .controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      background: #1f8f5f;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .info {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="controls">
+    <button onclick="chooseStart()">تحديد البداية</button>
+    <button onclick="chooseDestination()">تحديد الوجهة</button>
+    <button onclick="clearData()">حذف البيانات</button>
+
+    <div class="info">
+      اضغط على الخريطة لتحديد الموقع
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    let selectingStart = false;
+    let selectingDestination = false;
+
+    let startMarker = null;
+    let destinationMarker = null;
+    let routeLine = null;
+
+    const map = L.map("map").setView([24.5247, 39.5692], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        map.setView([lat, lng], 15);
+
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup("موقعك الحالي")
+          .openPopup();
+      },
+      () => {
+        alert("لا يمكن الوصول للموقع");
+      }
+    );
+
+    function chooseStart() {
+      selectingStart = true;
+      selectingDestination = false;
+      alert("اضغط على الخريطة لتحديد نقطة البداية");
+    }
+
+    function chooseDestination() {
+      selectingDestination = true;
+      selectingStart = false;
+      alert("اضغط على الخريطة لتحديد الوجهة");
+    }
+
+    map.on("click", function(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (selectingStart) {
+        if (startMarker) {
+          map.removeLayer(startMarker);
+        }
+
+        startMarker = L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup("نقطة البداية")
+          .openPopup();
+
+        localStorage.setItem("startLocation", JSON.stringify({ lat, lng }));
+        selectingStart = false;
+      }
+
+      else if (selectingDestination) {
+        if (destinationMarker) {
+          map.removeLayer(destinationMarker);
+        }
+
+        destinationMarker = L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup("الوجهة")
+          .openPopup();
+
+        localStorage.setItem("destinationLocation", JSON.stringify({ lat, lng }));
+        selectingDestination = false;
+      }
+
+      drawRoute();
+    });
+
+    function drawRoute() {
+      if (startMarker && destinationMarker) {
+        const start = startMarker.getLatLng();
+        const end = destinationMarker.getLatLng();
+
+        if (routeLine) {
+          map.removeLayer(routeLine);
+        }
+
+        routeLine = L.polyline([
+          [start.lat, start.lng],
+          [end.lat, end.lng]
+        ], {
+          color: "blue",
+          weight: 5
+        }).addTo(map);
+
+        map.fitBounds(routeLine.getBounds());
+      }
+    }
+
+    window.onload = () => {
+      const savedStart = JSON.parse(localStorage.getItem("startLocation"));
+      const savedDestination = JSON.parse(localStorage.getItem("destinationLocation"));
+
+      if (savedStart) {
+        startMarker = L.marker([savedStart.lat, savedStart.lng])
+          .addTo(map)
+          .bindPopup("نقطة البداية");
+      }
+
+      if (savedDestination) {
+        destinationMarker = L.marker([savedDestination.lat, savedDestination.lng])
+          .addTo(map)
+          .bindPopup("الوجهة");
+      }
+
+      drawRoute();
+    };
+
+    function clearData() {
+      localStorage.removeItem("startLocation");
+      localStorage.removeItem("destinationLocation");
+      location.reload();
+    }
+  </script>
+
+</body>
+</html>
