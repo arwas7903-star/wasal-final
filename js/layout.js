@@ -125,100 +125,171 @@
       location.reload();
     },
   };
+function handleVoiceCommand(command) {
 
-  let recognition = null;
-  let micIsRunning = false;
-  let shouldKeepListening = false;
+  command = command.trim().toLowerCase();
 
-  function handleVoiceCommand(command) {
-    command = command.trim().toLowerCase();
+  if (
+    command.includes("الخدمات") ||
+    command.includes("افتح الخدمات")
+  ){
 
-    if (command.includes("الخدمات") || command.includes("services")) {
-      location.href = "./services.html";
-    } else if (command.includes("الرئيسية") || command.includes("home")) {
-      location.href = "./index.html";
-    } else if (command.includes("وصالنا") || command.includes("الدعم")) {
-      location.href = "./disabilities.html";
-    } else if (command.includes("الطلبات") || command.includes("orders")) {
-      location.href = "./orders.html";
-    } else if (command.includes("تسجيل الدخول") || command.includes("login")) {
-      location.href = "./login.html";
-    } else if (command.includes("الخريطة") || command.includes("الموقع")) {
-      location.href = "./map.html";
-    } else if (command.includes("الدعم البصري")) {
-      location.href = "./disability-detail.html?id=1";
-    } else if (command.includes("الدعم السمعي")) {
-      location.href = "./disability-detail.html?id=2";
-    } else if (command.includes("الدعم الحركي")) {
-      location.href = "./disability-detail.html?id=3";
-    } else if (command.includes("رجوع") || command.includes("ارجع")) {
-      history.back();
-    } else {
-      speak(isAr ? "لم أفهم الأمر، حاولي مرة أخرى" : "I did not understand. Please try again.");
-    }
+    location.href="./services.html";
+
   }
 
-  window.startVoiceCommand = function () {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  else if(
+    command.includes("الرئيسية") ||
+    command.includes("افتح الرئيسية")
+  ){
 
-    if (!SpeechRecognition) {
-      alert("المتصفح لا يدعم الأوامر الصوتية. جربي Chrome أو Edge.");
-      return;
-    }
+    location.href="./index.html";
 
-    if (!recognition) {
-      recognition = new SpeechRecognition();
-      recognition.lang = isAr ? "ar-SA" : "en-US";
-      recognition.continuous = true;
-      recognition.interimResults = false;
+  }
 
-      recognition.onstart = function () {
-        micIsRunning = true;
-        const micBtn = document.getElementById("voice-command-btn");
-        if (micBtn) micBtn.style.background = "#b3261e";
-      };
+  else if(
+    command.includes("وصالنا") ||
+    command.includes("الدعم")
+  ){
 
-      recognition.onresult = function (event) {
-        const last = event.results[event.results.length - 1];
-        const command = last[0].transcript;
-        handleVoiceCommand(command);
-      };
+    location.href="./disabilities.html";
 
-      recognition.onerror = function () {
-        micIsRunning = false;
-      };
+  }
 
-      recognition.onend = function () {
-        micIsRunning = false;
+  else if(
+    command.includes("الطلبات")
+  ){
 
-        if (shouldKeepListening) {
-          setTimeout(function () {
-            try {
-              recognition.start();
-            } catch (e) {}
-          }, 600);
-        }
-      };
-    }
+    location.href="./orders.html";
 
-    shouldKeepListening = !shouldKeepListening;
+  }
 
-    if (shouldKeepListening) {
-      try {
-        recognition.start();
-        speak("تم تشغيل الأوامر الصوتية");
-      } catch (e) {}
-    } else {
-      try {
-        recognition.stop();
-        speak("تم إيقاف الأوامر الصوتية");
-      } catch (e) {}
+  else if(
+    command.includes("تسجيل الدخول")
+  ){
 
-      const micBtn = document.getElementById("voice-command-btn");
-      if (micBtn) micBtn.style.background = "#21865a";
-    }
+    location.href="./login.html";
+
+  }
+
+  else if(
+    command.includes("الخريطة") ||
+    command.includes("الموقع")
+  ){
+
+    location.href="./map.html";
+
+  }
+
+  else if(
+    command.includes("رجوع") ||
+    command.includes("ارجع")
+  ){
+
+    history.back();
+
+  }
+
+  else{
+
+    alert(
+      "لم أفهم الأمر، جربي: الخدمات - الرئيسية - الطلبات - الخريطة"
+    );
+
+  }
+
+}
+
+
+window.startVoiceCommand=function(){
+
+  const SpeechRecognition=
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+
+  if(!SpeechRecognition){
+
+    alert(
+      "المتصفح لا يدعم الأوامر الصوتية"
+    );
+
+    return;
+  }
+
+  const recognition=
+  new SpeechRecognition();
+
+  recognition.lang="ar-SA";
+
+  recognition.continuous=false;
+
+  recognition.interimResults=false;
+
+  recognition.maxAlternatives=1;
+
+
+  const micBtn=
+  document.getElementById(
+  "voice-command-btn"
+  );
+
+  if(micBtn){
+
+    micBtn.style.background=
+    "#b3261e";
+
+  }
+
+
+  recognition.start();
+
+
+  recognition.onresult=
+  function(event){
+
+    const command=
+    event.results[0][0]
+    .transcript;
+
+    handleVoiceCommand(
+      command
+    );
+
   };
 
+
+  recognition.onerror=
+  function(){
+
+    alert(
+      "لم يتم التقاط الصوت، حاولي مرة أخرى"
+    );
+
+    if(micBtn){
+
+      micBtn.style.background=
+      "#21865a";
+
+    }
+
+  };
+
+
+  recognition.onend=
+  function(){
+
+    if(micBtn){
+
+      micBtn.style.background=
+      "#21865a";
+
+    }
+
+  };
+
+};
+  
   document.addEventListener("mouseover", function (e) {
     const enabled = localStorage.getItem(Config.KEYS.VOICE) !== "false";
     if (!enabled) return;
