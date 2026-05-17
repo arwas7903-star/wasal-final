@@ -126,6 +126,38 @@
     },
   };
 
+  let recognition = null;
+  let micIsRunning = false;
+  let shouldKeepListening = false;
+
+  function handleVoiceCommand(command) {
+    command = command.trim().toLowerCase();
+
+    if (command.includes("الخدمات") || command.includes("services")) {
+      location.href = "./services.html";
+    } else if (command.includes("الرئيسية") || command.includes("home")) {
+      location.href = "./index.html";
+    } else if (command.includes("وصالنا") || command.includes("الدعم")) {
+      location.href = "./disabilities.html";
+    } else if (command.includes("الطلبات") || command.includes("orders")) {
+      location.href = "./orders.html";
+    } else if (command.includes("تسجيل الدخول") || command.includes("login")) {
+      location.href = "./login.html";
+    } else if (command.includes("الخريطة") || command.includes("الموقع")) {
+      location.href = "./map.html";
+    } else if (command.includes("الدعم البصري")) {
+      location.href = "./disability-detail.html?id=1";
+    } else if (command.includes("الدعم السمعي")) {
+      location.href = "./disability-detail.html?id=2";
+    } else if (command.includes("الدعم الحركي")) {
+      location.href = "./disability-detail.html?id=3";
+    } else if (command.includes("رجوع") || command.includes("ارجع")) {
+      history.back();
+    } else {
+      speak(isAr ? "لم أفهم الأمر، حاولي مرة أخرى" : "I did not understand. Please try again.");
+    }
+  }
+
   window.startVoiceCommand = function () {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -134,33 +166,57 @@
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = isAr ? "ar-SA" : "en-US";
-    recognition.start();
+    if (!recognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = isAr ? "ar-SA" : "en-US";
+      recognition.continuous = true;
+      recognition.interimResults = false;
 
-    recognition.onresult = function (event) {
-      const command = event.results[0][0].transcript.trim();
+      recognition.onstart = function () {
+        micIsRunning = true;
+        const micBtn = document.getElementById("voice-command-btn");
+        if (micBtn) micBtn.style.background = "#b3261e";
+      };
 
-      if (command.includes("الخدمات") || command.toLowerCase().includes("services")) {
-        location.href = "./services.html";
-      } else if (command.includes("الرئيسية") || command.toLowerCase().includes("home")) {
-        location.href = "./index.html";
-      } else if (command.includes("وصالنا")) {
-        location.href = "./disabilities.html";
-      } else if (command.includes("الطلبات") || command.toLowerCase().includes("orders")) {
-        location.href = "./orders.html";
-      } else if (command.includes("تسجيل الدخول") || command.toLowerCase().includes("login")) {
-        location.href = "./login.html";
-      } else if (command.includes("الدعم البصري")) {
-        location.href = "./disability-detail.html?id=1";
-      } else if (command.includes("الدعم السمعي")) {
-        location.href = "./disability-detail.html?id=2";
-      } else if (command.includes("الدعم الحركي")) {
-        location.href = "./disability-detail.html?id=3";
-      } else {
-        speak(isAr ? "لم أفهم الأمر، حاولي مرة أخرى" : "I did not understand. Please try again.");
-      }
-    };
+      recognition.onresult = function (event) {
+        const last = event.results[event.results.length - 1];
+        const command = last[0].transcript;
+        handleVoiceCommand(command);
+      };
+
+      recognition.onerror = function () {
+        micIsRunning = false;
+      };
+
+      recognition.onend = function () {
+        micIsRunning = false;
+
+        if (shouldKeepListening) {
+          setTimeout(function () {
+            try {
+              recognition.start();
+            } catch (e) {}
+          }, 600);
+        }
+      };
+    }
+
+    shouldKeepListening = !shouldKeepListening;
+
+    if (shouldKeepListening) {
+      try {
+        recognition.start();
+        speak("تم تشغيل الأوامر الصوتية");
+      } catch (e) {}
+    } else {
+      try {
+        recognition.stop();
+        speak("تم إيقاف الأوامر الصوتية");
+      } catch (e) {}
+
+      const micBtn = document.getElementById("voice-command-btn");
+      if (micBtn) micBtn.style.background = "#21865a";
+    }
   };
 
   document.addEventListener("mouseover", function (e) {
@@ -178,6 +234,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     const micBtn = document.createElement("button");
+    micBtn.id = "voice-command-btn";
     micBtn.innerHTML = "🎤";
     micBtn.title = "أوامر صوتية";
     micBtn.onclick = window.startVoiceCommand;
